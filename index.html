@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Shop Portal - Sell or Buy</title>
+  <style>
+    :root{--accent:#06b6d4;--bg:#f3f4f6}
+    body{margin:0;font-family:Inter,system-ui;background:var(--bg);color:#0f172a}
+    .wrap{max-width:1100px;margin:auto;padding:20px}
+    header{text-align:center;margin-bottom:20px}
+    h1{margin:0}
+    .hidden{display:none}
+    .btn{background:var(--accent);border:0;padding:10px 16px;color:white;border-radius:8px;cursor:pointer;font-size:15px}
+    .btn-ghost{background:white;border:1px solid #e6e9ee;color:#374151;padding:8px 14px;border-radius:8px;cursor:pointer}
+    .choice{display:flex;justify-content:center;gap:20px;margin-top:40px}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:18px;margin-top:18px}
+    form{background:white;padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+    label{display:block;font-size:13px;margin-top:8px;color:#374151}
+    input,textarea{width:100%;padding:8px;margin-top:6px;border:1px solid #e6e9ee;border-radius:8px}
+    textarea{min-height:80px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .card{background:white;padding:10px;border-radius:10px;border:1px solid #e6e9ee}
+    .card img{width:100%;height:160px;object-fit:cover;border-radius:8px}
+    .note{font-size:13px;color:#6b7280;margin-top:8px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🛍️ Shop Portal</h1>
+    <p>Choose what you want to do:</p>
+    <div class="choice" id="choice">
+      <button class="btn" onclick="selectMode('sell')">I'm a Seller (Sell Items)</button>
+      <button class="btn" onclick="selectMode('buy')">I'm a Buyer (View & Buy)</button>
+    </div>
+  </header>
+
+  <div id="sellMode" class="hidden">
+    <h2>Dukandar: Apna Item Add Karein</h2>
+    <div class="grid">
+      <div>
+        <input id="search" placeholder="Search item, store..." type="text" style="width:100%;margin-bottom:10px">
+        <div id="list"></div>
+      </div>
+      <aside>
+        <form id="itemForm">
+          <label>Store name</label>
+          <input id="storeName" required>
+          <label>Store address</label>
+          <input id="storeAddr" required>
+          <label>Item name</label>
+          <input id="itemName" required>
+          <label>Price</label>
+          <input id="price" type="number">
+          <label>Details</label>
+          <textarea id="details"></textarea>
+          <label>Item photo</label>
+          <input id="photo" type="file" accept="image/*">
+          <button class="btn" type="submit">Add / Update Item</button>
+        </form>
+      </aside>
+    </div>
+    <button class="btn-ghost" style="margin-top:15px" onclick="backToChoice()">⬅️ Back</button>
+  </div>
+
+  <div id="buyMode" class="hidden">
+    <h2>Buyer: Dekhein aur Kharidein</h2>
+    <input id="search2" placeholder="Search items..." type="text" style="width:100%;margin-bottom:10px">
+    <div id="list2"></div>
+    <button class="btn-ghost" style="margin-top:15px" onclick="backToChoice()">⬅️ Back</button>
+  </div>
+</div>
+
+<script>
+const KEY='market_items_v2';
+let items=JSON.parse(localStorage.getItem(KEY)||'[]');
+const el=id=>document.getElementById(id);
+
+function selectMode(mode){
+  el('choice').classList.add('hidden');
+  if(mode==='sell') el('sellMode').classList.remove('hidden');
+  else el('buyMode').classList.remove('hidden');
+  render();
+}
+function backToChoice(){
+  el('sellMode').classList.add('hidden');
+  el('buyMode').classList.add('hidden');
+  el('choice').classList.remove('hidden');
+}
+
+function save(){localStorage.setItem(KEY,JSON.stringify(items));}
+function render(){
+  const list=el('list'),list2=el('list2');
+  if(!items.length){list.innerHTML=list2.innerHTML='<div class="note">No items added yet.</div>';return;}
+  const cards=items.map(it=>`<div class='card'><img src='${it.photo||''}'><h3>${it.itemName}</h3><p>${it.storeName}</p><p>₹${it.price||''}</p><p>${it.details||''}</p></div>`).join('');
+  list.innerHTML=list2.innerHTML='<div class="cards">'+cards+'</div>';
+}
+
+el('itemForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=el('photo').files[0];let photoData=null;
+  if(f)photoData=await fileToDataUrl(f);
+  const item={id:Date.now(),storeName:el('storeName').value,storeAddr:el('storeAddr').value,itemName:el('itemName').value,price:el('price').value,details:el('details').value,photo:photoData};
+  items.push(item);save();render();e.target.reset();
+});
+function fileToDataUrl(f){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f);});}
+</script>
+</body>
+</html>
